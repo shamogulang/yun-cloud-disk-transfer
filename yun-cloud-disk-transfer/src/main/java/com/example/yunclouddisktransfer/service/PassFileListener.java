@@ -1,19 +1,16 @@
 package com.example.yunclouddisktransfer.service;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import org.apache.rocketmq.spring.annotation.MessageModel;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import org.springframework.context.annotation.Bean;
+import java.util.Map;
 
 @Service
 @RocketMQMessageListener(
-        topic = "pass_file",
+        topic = "transfer_file",
         consumerGroup = "transfer_file_group",
         messageModel = MessageModel.CLUSTERING
 )
@@ -39,23 +36,20 @@ public class PassFileListener implements RocketMQListener<String> {
         public String eventType;
         public String messageId;
         public String userId;
+        public String downloadUrl;
+        public Map<String, String> thumbUploadUrls;
+        public String baseName;
     }
 
     @Override
     public void onMessage(String message) {
         try {
             TransferFileEvent event = objectMapper.readValue(message, TransferFileEvent.class);
-            String objectName = event.fullFileIdPath;
             String fileType = event.fileType;
-            String format = null;
-            if (objectName != null && objectName.contains(".")) {
-                format = objectName.substring(objectName.lastIndexOf('.') + 1);
-            } else {
-                format = "jpg";
+            if (fileType.contains("image")  || fileType.contains("video")) {
+                fileProcessor.processFile(event.baseName, event.fileId, fileType, event.downloadUrl, event.thumbUploadUrls);
             }
-            if ("image".equalsIgnoreCase(fileType) || "video".equalsIgnoreCase(fileType)) {
-                fileProcessor.processFile(objectName, fileType, format);
-            }
+
         } catch (Exception e) {
             e.printStackTrace();
             // 建议用 logger 记录异常
