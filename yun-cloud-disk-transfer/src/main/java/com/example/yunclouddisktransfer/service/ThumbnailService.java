@@ -21,7 +21,7 @@ public class ThumbnailService {
         sizeMap.put("L", 600);
     }
 
-    private int videoFrameSecond = 5;
+    private int videoFrameSecond = 1;
 
     public File createImageThumbnails(File imageFile, String size, String format) throws Exception {
         Integer sizeInt = sizeMap.get(size);
@@ -41,12 +41,16 @@ public class ThumbnailService {
             grabber.setFrameNumber(frameNumber);
             Java2DFrameConverter converter = new Java2DFrameConverter();
             BufferedImage frame = converter.getBufferedImage(grabber.grabImage());
-//            for (Integer size : sizeList) {
-//                BufferedImage thumb = Thumbnails.of(frame).size(size, size).asBufferedImage();
-//                File out = File.createTempFile("thumb-" + size + "-", "." + format);
-//                ImageIO.write(thumb, format, out);
-//                result.add(out);
-//            }
+            
+            if (frame != null) {
+                for (Map.Entry<String, Integer> entry : sizeMap.entrySet()) {
+                    Integer size = entry.getValue();
+                    BufferedImage thumb = Thumbnails.of(frame).size(size, size).asBufferedImage();
+                    File out = File.createTempFile("thumb-" + size + "-", "." + format);
+                    ImageIO.write(thumb, format, out);
+                    result.add(out);
+                }
+            }
             grabber.stop();
         }
         return result;
